@@ -1,47 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:queue_app/home_screen.dart';
-import 'package:provider/provider.dart';
-import 'package:queue_app/provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:queue_app/app.dart';
+import 'package:queue_app/cubits/audio/audio_cubit.dart';
+import 'package:queue_app/cubits/log/log_cubit.dart';
+import 'package:queue_app/cubits/network/network_cubit.dart';
+import 'package:queue_app/cubits/queue/queue_cubit.dart';
+import 'package:queue_app/cubits/settings/settings_cubit.dart';
+import 'package:queue_app/services/audio_service.dart';
+import 'package:queue_app/services/settings_repository.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => GlobalProvider(),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          lazy: false,
+          create: (_) => LogCubit(),
+        ),
+        BlocProvider(
+          lazy: false,
+          create: (_) => SettingsCubit(SettingsRepository())..loadSettings(),
+        ),
+        BlocProvider(
+          lazy: false,
+          create: (context) =>
+              AudioCubit(AudioService(), log: context.read<LogCubit>().add),
+        ),
+        BlocProvider(
+          lazy: false,
+          create: (context) => QueueCubit(log: context.read<LogCubit>().add),
+        ),
+        BlocProvider(
+          lazy: false,
+          create: (context) => NetworkCubit(
+            queueCubit: context.read<QueueCubit>(),
+            log: context.read<LogCubit>().add,
+          )..start(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<GlobalProvider>(builder: (context, provider, child) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color.fromARGB(255, 255, 255, 255)),
-          useMaterial3: true,
-        ),
-        //
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(provider.fontSize),
-          ),
-          child: child!,
-        ),
-        //
-        home: const SafeArea(
-          child: MyHomePage(),
-        ),
-      );
-    });
-  }
 }

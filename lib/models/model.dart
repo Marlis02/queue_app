@@ -1,16 +1,25 @@
+// Null-безопасные fromJson: UDP — второй, непроверенный вход,
+// кривая датаграмма не должна ронять парсинг.
+
 class Queues {
-  final List<Queue>? cooking;
-  final List<QueueDone>? done;
+  final List<Queue> cooking;
+  final List<QueueDone> done;
 
   Queues({
-    this.cooking,
-    this.done,
+    this.cooking = const [],
+    this.done = const [],
   });
 
   factory Queues.fromJson(Map<String, dynamic> json) {
     return Queues(
-      cooking: (json['cooking'] as List).map((e) => Queue.fromJson(e)).toList(),
-      done: (json['done'] as List).map((e) => QueueDone.fromJson(e)).toList(),
+      cooking: (json['cooking'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(Queue.fromJson)
+          .toList(),
+      done: (json['done'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(QueueDone.fromJson)
+          .toList(),
     );
   }
 }
@@ -30,10 +39,10 @@ class Queue {
 
   factory Queue.fromJson(Map<String, dynamic> json) {
     return Queue(
-      id: json['id'],
-      time: json['time'],
-      info: json['info'],
-      counter: json['counter'] as String,
+      id: int.tryParse('${json['id']}') ?? 0,
+      time: '${json['time'] ?? ''}',
+      info: '${json['info'] ?? ''}',
+      counter: '${json['counter'] ?? ''}',
     );
   }
 }
@@ -55,11 +64,11 @@ class QueueDone {
 
   factory QueueDone.fromJson(Map<String, dynamic> json) {
     return QueueDone(
-      id: json['id'],
-      time: json['time'],
-      info: json['info'],
-      counter: json['counter'] as String,
-      selected: json['selected'],
+      id: int.tryParse('${json['id']}') ?? 0,
+      time: '${json['time'] ?? ''}',
+      info: '${json['info'] ?? ''}',
+      counter: '${json['counter'] ?? ''}',
+      selected: json['selected'] == true,
     );
   }
 }
